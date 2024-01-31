@@ -13,6 +13,7 @@ local prompt_buffer = vim.api.nvim_create_buf(false, true)
 
 local events = require("myllama.events")
 local chat_buffer_content = ""
+local current_context = nil
 events:on("myllama:chat", function(message)
 	local new_chat_content = chat_buffer_content .. message
 	vim.api.nvim_buf_set_option(chat_buffer, "modifiable", true)
@@ -21,13 +22,21 @@ events:on("myllama:chat", function(message)
 	chat_buffer_content = new_chat_content
 end)
 
+events:on("myllama:finished", function(context)
+  current_context = context
+  chat_buffer_content = chat_buffer_content.."\n"
+end)
+
 vim.keymap.set("i", "<CR>", function()
 	local text = vim.api.nvim_get_current_line()
 	local client = require("myllama.client")
 	client:generate("codellama", text, {
+    context = current_context,
 		callback = function(response)
 			if not response.done then
 				events:emit("myllama:chat", response.response)
+      else 
+        events:emit("myllama:finished", response.context)
 			end
 		end,
 	})
