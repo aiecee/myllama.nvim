@@ -23,8 +23,8 @@ local curl = require("plenary.curl")
 
 ---@type ClientOptions
 local default_options = {
-  base_url = "http://127.0.0.1",
-  port = 11434,
+	base_url = "http://127.0.0.1",
+	port = 11434,
 }
 
 ---@class Client
@@ -35,44 +35,53 @@ Client.__index = Client
 
 ---@return Client
 function Client:new()
-  local options = default_options
-  local client = setmetatable({options = options}, self)
-  return client
+	local options = default_options
+	local client = setmetatable({ options = options }, self)
+	return client
 end
 
 ---@return string[]
 function Client:get_models()
-  local res = curl.get(self.options.base_url..":"..self.options.port.."/api/tags")
-  local success, body = pcall(function() return vim.json.decode(res.body) end)
-  local models = {}
+	local res = curl.get(self.options.base_url .. ":" .. self.options.port .. "/api/tags")
+	local success, body = pcall(function()
+		return vim.json.decode(res.body)
+	end)
+	local models = {}
 
-  if not success or body == nil then
-    return models
-  end
+	if not success or body == nil then
+		return models
+	end
 
-  for _, model in pairs(body.models) do
-    table.insert(models, model.name)
-  end
+	for _, model in pairs(body.models) do
+		table.insert(models, model.name)
+	end
 
-  return models
+	return models
 end
 
 ---@param model string
 ---@param prompt string
 ---@param options ClientGenerateOptions?
 function Client:generate(model, prompt, options)
-  local opts = options or {}
-  local body = { model = model, prompt = prompt, stream = true, context = opts.context or nil }
+	local opts = options or {}
+	local body = { model = model, prompt = prompt, stream = true, context = opts.context or nil }
 
-  curl.post(self.options.base_url..":"..self.options.port.."/api/generate", {
-    body = vim.json.encode(body),
-    ---@param chunk ClientGenerateChunk
-    stream = function(_, chunk)
-      if opts.callback ~= nil then
-        opts.callback(chunk)
-      end
-    end
-  })
+	curl.post(self.options.base_url .. ":" .. self.options.port .. "/api/generate", {
+		body = vim.json.encode(body),
+		---@param chunk ClientGenerateChunk
+		stream = function(_, chunk)
+			if opts.callback == nil then
+				return
+			end
+
+			local success, decoded = pcall(vim.json.decode, chunk)
+			if not success then
+				return
+			end
+
+			opts.callback(decoded)
+		end,
+	})
 end
 
 local client = Client:new()
@@ -81,15 +90,15 @@ local client = Client:new()
 ---@param options PartialClientOptions?
 ---@return Client
 function Client.setup(self, options)
-  if self ~= client then
-    ---@diagnostic disable-next-line: cast-local-type
-    options = self
-    self = client
-  end
+	if self ~= client then
+		---@diagnostic disable-next-line: cast-local-type
+		options = self
+		self = client
+	end
 
-  self.options = vim.tbl_deep_extend("force", self.options, options or {})
+	self.options = vim.tbl_deep_extend("force", self.options, options or {})
 
-  return self
+	return self
 end
 
 return client
