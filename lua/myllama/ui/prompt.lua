@@ -144,6 +144,7 @@ function PromptBuilder:show()
   local merged_options = vim.tbl_deep_extend("force", options, self.window)
   local buffer = vim.api.nvim_create_buf(false, true)
   local window = vim.api.nvim_open_win(buffer, true, merged_options)
+  vim.cmd("startinsert")
   return Prompt:new(buffer, window, self.submit_event)
 end
 
