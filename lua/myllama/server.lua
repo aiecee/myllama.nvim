@@ -35,7 +35,7 @@ Server.__index = Server
 ---@return Server
 function Server:new()
   local options = default_options
-  local server = setmetatable({options = options}, self)
+  local server = setmetatable({ options = options }, self)
   return server
 end
 

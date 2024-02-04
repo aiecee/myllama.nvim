@@ -14,7 +14,7 @@ MyLlama.__index = MyLlama
 
 ---@return MyLlama
 function MyLlama:new()
-  local myLlama = setmetatable({ selected_model = nil}, self)
+  local myLlama = setmetatable({ selected_model = nil }, self)
   return myLlama
 end
 
